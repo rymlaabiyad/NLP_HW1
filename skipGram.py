@@ -27,11 +27,11 @@ def loadPairs(path):
 
 class SkipGram:
     def __init__(self,sentences, nEmbed=100, negativeRate=5, winSize = 5, minCount = 5):
-	self.sentences = sentences
+        self.sentences = sentences
         self.nEmbed= nEmbed
-	self.negativeRate = negativeRate
-	self.winSize = winSize
-	self.minCount = minCount
+        self.negativeRate = negativeRate
+        self.winSize = winSize
+        self.minCount = minCount
 
     def train(self,stepsize, epochs):
         raise NotImplementedError('implement it!')
