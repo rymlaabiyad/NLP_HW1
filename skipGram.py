@@ -27,6 +27,7 @@ def loadPairs(path):
 
 class SkipGram:
     def __init__(self,sentences, nEmbed=100, negativeRate=5, winSize = 5, minCount = 5):
+        self.nEmbed= nEmbed
         raise NotImplementedError('implement it!')
 
 
