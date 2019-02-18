@@ -26,13 +26,15 @@ def loadPairs(path):
 
 
 class SkipGram:
-    def __init__(self,sentences, nEmbed=100, negativeRate=5, winSize = 5, minCount = 5):
+    def __init__(self,sentences, nEmbed=100, negativeRate=5, winSize = 5, minCount = 5, alpha=3/4):
         self.sentences = sentences
         self.nEmbed= nEmbed
         self.negativeRate = negativeRate
         self.winSize = winSize
         self.minCount = minCount
-
+        self.word2vec_init()
+        self.alpha = alpha
+        
     def train(self,stepsize, epochs):
         raise NotImplementedError('implement it!')
 
@@ -51,6 +53,41 @@ class SkipGram:
     @staticmethod
     def load(path):
         raise NotImplementedError('implement it!')
+        
+    def word2vec_init(self) :
+        """     Creates 4 dictionnaries for sentences:
+            word2vec : for each word, creates a random uniform array of size nEmbed
+            word_count : counts the number of occurrences of each word
+            context2vec : for each word, creates a random uniform array of size nEmbed
+            id2context : assign an id as key for each for each word
+                It also creates a list of frequencies, where the frequencies are the nb of occurrence 
+                of a word raised to the power of alpha, divided by the sum of all those weights"""
+        self.word2vec = {}
+        self.word_count = {}
+        self.context2vec = {}
+        for sent in self.sentences :
+            for word in sent :
+                if word in self.word2vec.keys() :
+                    self.word_count[word] +=1
+                else :
+                    self.word2vec[word] = np.random.rand(self.nEmbed)
+                    self.context2vec[word] = np.random.rand(self.nEmbed)
+                    self.word_count[word] = 1
+                    
+        self.id2context = { i : w for i,w in enumerate(self.word2vec.keys())}
+        
+        self.freq = np.array(list(self.word_count.values()))
+        self.freq = np.power(self.freq, self.alpha) 
+        self.freq /= self.freq.sum()
+        
+        self.voc_size = len(self.freq)     
+        return 
+    
+    def negative_sampling(self):
+        """ This function returns indexes of words picked following the distribution below :
+            P (word[i]) = frequency(word[i])^alpha / sum of all frequencies raised to the power alpha """
+        sample = np.random.choice(a=np.arange(self.voc_size),size=self.negativeRate, p= self.freq)
+        return sample
 
 if __name__ == '__main__':
 
