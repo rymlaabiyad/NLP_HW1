@@ -5,7 +5,7 @@ import pandas as pd
 # useful stuff
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
-
+import spacy
 from scipy.special import expit
 from sklearn.preprocessing import normalize
 
@@ -19,6 +19,15 @@ def text2sentences(path):
     with open(path) as f:
         for l in f:
             sentences.append( l.lower().split() )
+    return sentences
+
+def text2sentences_lemma(path):
+    sentences = []
+    lem = spacy.load('en')
+    with open(path) as f:
+        for l in f:
+            l = lem(l)
+            sentences.append( [word.lemma_ for word in l] )
     return sentences
 
 def loadPairs(path):
@@ -134,13 +143,29 @@ class SkipGram:
         neg = sum([np.log(self.sigmoid(-np.dot(word, v))) for v in v_neg]) 
         return np.log(self.sigmoid(np.dot(word, context))) + neg 
     
+    def gradient_center_word (self, center_word, context_word, negative_sample) :
+        """ This function is the derived loss function by the vector of the central word 
+            The arguments should be vectors of words embedding."""
+        raise NotImplementedError('implement it!')
+    
+    def gradient_context_word (self, center_word, context_word): 
+        """ This function is the derived loss function by the vector of the context word
+        The arguments should be vectors of words embedding."""
+        raise NotImplementedError('implement it!')
+    
+    def gradient_neg_word (self, center_word, neg_word ) :
+        """ This function is the derived loss function by the vector of one negative sampled word
+        The arguments should be vectors of words embedding."""
+        raise NotImplementedError('implement it!')
+    
     def sentence2io(self, sentence) :
         """ This function takes as input a sentence, and returns zip of tuples of 2 lists :
             - the first list contains the center word
             - the second contains the context words of this center word
         """
         raise NotImplementedError('implement it!')
-        
+    
+    
         
 
 if __name__ == '__main__':
