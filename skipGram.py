@@ -4,8 +4,8 @@ import pandas as pd
 
 # useful stuff
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
 import spacy
+from spacy.tokenizer import Tokenizer
 from scipy.special import expit
 from sklearn.preprocessing import normalize
 
@@ -28,6 +28,15 @@ def text2sentences_lemma(path):
         for l in f:
             l = lem(l)
             sentences.append( [word.lemma_ for word in l] )
+    return sentences
+
+def text2sentences_without_punctuation(path):
+    sentences = []
+    nlp = spacy.load('en')
+    tokenizer = Tokenizer(nlp.vocab)
+    with open(path) as f:
+        for l in f:
+            sentences.append([str(t) for t in tokenizer(l) if (t.is_punct == False and (str(t) == '\n') == False)])
     return sentences
 
 def loadPairs(path):
@@ -67,11 +76,6 @@ class SkipGram:
                         for j, v in enumerate(v_neg) :
                             self.context2vec[negative_sample[j]]= v - stepsize * self.gradient_neg_word ( v_center_word, v )
             print("Epoch number" + str(i) + ", the loss is : " + str(loss))
-                        
-                        
-                
-            print('Gradient, then backpropagation')
-        raise NotImplementedError('implement it!')
 
     def save(self,path):
         """ This function save the model, i.e : 
@@ -178,10 +182,7 @@ class SkipGram:
         if(isinstance(word, str)) :
             word = self.word2vec[word]
         if(isinstance(context, str)):
-            context = self.word2vec[context]
-        #neg_sample_words = [self.id2context[neg_sample] for neg_sample in self.negative_sampling()]
-        #v_neg = [self.context2vec[w] for w in neg_sample_words]
-        
+            context = self.context2vec[context]
         
         neg = sum([np.log(self.sigmoid(-np.vdot(word, v))) for v in negative_sample])
         res = (- np.log(self.sigmoid(np.vdot(word, context))) - neg) 
@@ -236,11 +237,10 @@ if __name__ == '__main__':
     opts = parser.parse_args()
 
     if not opts.test:
-        sentences = text2sentences(opts.text)
+        sentences = text2sentences_without_punctuation(opts.text)
         sg = SkipGram(sentences)
-        print(sg.loss_function('swimming', 'participating'))
-        '''sg.train(...)
-        sg.save(opts.model)'''
+        sg.train()
+        #sg.save(opts.model)
 
     else:
         pairs = loadPairs(opts.text)
