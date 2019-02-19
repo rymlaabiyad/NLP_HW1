@@ -39,6 +39,19 @@ class SkipGram:
         raise NotImplementedError('implement it!')
 
     def save(self,path):
+        """ This function save the model, i.e : 
+            - nEmbed
+            - negativeRate,
+            - winSize
+            - minCount
+            - alpha
+            - word2vec
+            - word_count
+            - context2vec
+            - id2context
+            - freq
+            - voc_size
+        """
         raise NotImplementedError('implement it!')
 
     def similarity(self,word1,word2):
@@ -52,6 +65,19 @@ class SkipGram:
 
     @staticmethod
     def load(path):
+        """ This function loads the model, i.e :
+            - nEmbed
+            - negativeRate,
+            - winSize
+            - minCount
+            - alpha
+            - word2vec
+            - word_count
+            - context2vec
+            - id2context
+            - freq
+            - voc_size
+            """
         raise NotImplementedError('implement it!')
         
     def word2vec_init(self) :
@@ -65,6 +91,7 @@ class SkipGram:
         self.word2vec = {}
         self.word_count = {}
         self.context2vec = {}
+        
         for sent in self.sentences :
             for word in sent :
                 if word in self.word2vec.keys() :
@@ -73,14 +100,18 @@ class SkipGram:
                     self.word2vec[word] = np.random.rand(self.nEmbed)
                     self.context2vec[word] = np.random.rand(self.nEmbed)
                     self.word_count[word] = 1
-                    
-        self.id2context = { i : w for i,w in enumerate(self.word2vec.keys())}
         
-        self.freq = np.array(list(self.word_count.values()))
-        self.freq = np.power(self.freq, self.alpha) 
+        self.voc_size=0
+        self.id2context={}
+        self.freq =np.array([])
+        
+        for word,count in self.word_count.items() :
+            self.id2context[self.voc_size] = word
+            self.freq= np.append(self.freq, np.power(count, self.alpha))
+            self.voc_size +=1
+        
         self.freq /= self.freq.sum()
         
-        self.voc_size = len(self.freq)     
         return 
     
     def negative_sampling(self):
@@ -88,6 +119,13 @@ class SkipGram:
             P (word[i]) = frequency(word[i])^alpha / sum of all frequencies raised to the power alpha """
         sample = np.random.choice(a=np.arange(self.voc_size),size=self.negativeRate, p= self.freq)
         return sample
+    
+    def sentence2io(self, sentence) :
+        """ This function takes as input a sentence, and returns zip of tuples of 2 lists :
+            - the first list contains the center word
+            - the second contains the context words of this center word
+        """
+        
 
 if __name__ == '__main__':
 
