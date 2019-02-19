@@ -158,7 +158,7 @@ if __name__ == '__main__':
     else:
         pairs = loadPairs(opts.text)
 
-        sg = mSkipGram.load(opts.model)
+        sg = SkipGram.load(opts.model)
         for a,b,_ in pairs:
             print(sg.similarity(a,b))
 
