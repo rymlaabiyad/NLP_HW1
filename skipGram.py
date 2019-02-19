@@ -124,11 +124,15 @@ class SkipGram:
         return 1/ (1+ np.exp(-x))
     
     def loss_function(self, word, context):   
-        v_word = self.word2vec[word]
+        if(isinstance(word, str)) :
+            word = self.word2vec[word]
+        if(isinstance(context, str)):
+            context = self.word2vec[context]
+        
         neg_sample_words = [self.id2context[neg_sample] for neg_sample in self.negative_sampling()]
         v_neg = [self.context2vec[w] for w in neg_sample_words]
-        neg = sum([np.log(self.sigmoid(-np.dot(v_word, v))) for v in v_neg]) 
-        return np.log(self.sigmoid(np.dot(v_word, self.word2vec[context]))) + neg 
+        neg = sum([np.log(self.sigmoid(-np.dot(word, v))) for v in v_neg]) 
+        return np.log(self.sigmoid(np.dot(word, context))) + neg 
     
     def sentence2io(self, sentence) :
         """ This function takes as input a sentence, and returns zip of tuples of 2 lists :
@@ -151,8 +155,9 @@ if __name__ == '__main__':
     if not opts.test:
         sentences = text2sentences(opts.text)
         sg = SkipGram(sentences)
-        sg.train(...)
-        sg.save(opts.model)
+        print(sg.loss_function('swimming', 'participating'))
+        '''sg.train(...)
+        sg.save(opts.model)'''
 
     else:
         pairs = loadPairs(opts.text)
