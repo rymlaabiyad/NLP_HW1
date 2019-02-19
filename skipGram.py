@@ -13,6 +13,8 @@ from sklearn.preprocessing import normalize
 __authors__ = ['author1','author2','author3']
 __emails__  = ['fatherchristmas@northpole.dk','toothfairy@blackforest.no','easterbunny@greenfield.de']
 
+### Tokenization and pre-processing ###
+
 def text2sentences(path):
     # feel free to make a better tokenization/pre-processing
     sentences = []
@@ -31,6 +33,12 @@ def text2sentences_lemma(path):
     return sentences
 
 def text2sentences_without_punctuation(path):
+    '''This function retrieves the entire training text, 
+        removes punctuation and line breaks,
+        and returns a list of lists. 
+        Each element of the main list is a sentence, made of a list of words.
+    '''
+    
     sentences = []
     nlp = spacy.load('en')
     tokenizer = Tokenizer(nlp.vocab)
@@ -46,7 +54,8 @@ def loadPairs(path):
 
 
 class SkipGram:
-    def __init__(self, sentences, nEmbed=100, negativeRate=5, winSize = 5, minCount = 5, alpha=3/4, word2vec = {}):
+    def __init__(self, sentences = '', nEmbed=100, negativeRate=5, winSize = 5, minCount = 5,
+                 alpha=3/4, word2vec = {}):
         self.sentences = sentences
         self.nEmbed= nEmbed
         self.negativeRate = negativeRate
@@ -116,32 +125,8 @@ class SkipGram:
             - freq
             - voc_size
         """
-        model = pd.DataFrame.from_dict(data = self.word2vec, orient= 'index')
-        model.to_csv(path)
-
-
-    def similarity(self,word1, word2):
-        """
-            computes similiarity between the two words. unknown words are mapped to one common vector
-        :param word1:
-        :param word2:
-        :return: a float \in [0,1] indicating the similarity (the higher the more similar)
-        """
-        test = ( word2 in self.word2vec.keys() )
-        if word1 in self.word2vec.keys() :
-            if test == 1 :
-                similarity = np.dot(self.word2vec[word1],self.word2vec[word2]) /  ( np.linalg.norm(self.word2vec[word1]) * np.linalg.norm(self.word2vec[word2]) )
-            else : 
-                word2 = self.randomvector
-                similarity = np.dot(self.word2vec[word1],word2) /  ( np.linalg.norm(self.word2vec[word1]) * np.linalg.norm(word2) )
-        else :
-            word1 = self.randomvector
-            if test == 1 :
-                similarity = np.dot(word1,self.word2vec[word2]) /  ( np.linalg.norm(word1) * np.linalg.norm(self.word2vec[word2]) )
-            else : 
-                word2 = self.randomvector
-                similarity = np.dot(word1,word2) /  ( np.linalg.norm(word1) * np.linalg.norm(word2) )
-        return similarity
+        model = pd.DataFrame.from_dict(data = self.word2vec)
+        model.to_csv(path, index = False)
 
     @staticmethod
     def load(path):
@@ -158,9 +143,32 @@ class SkipGram:
             - freq
             - voc_size
             """
-        model = pd.from_csv(path)
-        word2vec = model.to_dict()
+        model = pd.read_csv(path)
+        word2vec = model.to_dict(orient='list')
         return SkipGram(word2vec = word2vec)
+    
+    def similarity(self,word1, word2):
+        """
+            computes similiarity between the two words. unknown words are mapped to one common vector
+        :param word1:
+        :param word2:
+        :return: a float \in [0,1] indicating the similarity (the higher the more similar)
+        """
+        test = ( word2 in self.word2vec.keys() )
+        if word1 in self.word2vec.keys() :
+            if test == 1 :
+                similarity = np.dot(self.word2vec[word1], self.word2vec[word2]) / ( np.linalg.norm(self.word2vec[word1]) * np.linalg.norm(self.word2vec[word2]) )
+            else : 
+                word2 = self.randomvector
+                similarity = np.dot(self.word2vec[word1],word2) /  ( np.linalg.norm(self.word2vec[word1]) * np.linalg.norm(word2) )
+        else :
+            word1 = self.randomvector
+            if test == 1 :
+                similarity = np.dot(word1,self.word2vec[word2]) /  ( np.linalg.norm(word1) * np.linalg.norm(self.word2vec[word2]) )
+            else : 
+                word2 = self.randomvector
+                similarity = np.dot(word1,word2) /  ( np.linalg.norm(word1) * np.linalg.norm(word2) )
+        return similarity
         
     def word2vec_init(self) :
         """     Creates 4 dictionnaries for sentences:
@@ -254,6 +262,7 @@ class SkipGram:
             
             inf = index - self.winSize
             sup = index + self.winSize + 1
+            context = []
             context = [sentence[i] for i in range(inf, sup) if 0 <= i < L and i != index]
             
             index += 1
@@ -297,7 +306,5 @@ if __name__ == '__main__':
         sg = SkipGram.load(opts.model)
         for a,b,_ in pairs:
             print(sg.similarity(a,b))
-            
-    
 
 
