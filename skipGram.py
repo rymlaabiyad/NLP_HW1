@@ -162,17 +162,22 @@ class SkipGram:
     def gradient_center_word (self, center_word, context_word, negative_sample) :
         """ This function is the derived loss function by the vector of the central word 
             The arguments should be vectors of words embedding."""
-        raise NotImplementedError('implement it!')
+        res = (self.sigmoid( np.vdot(center_word, context_word) )-1) * context_word
+        for n in negative_sample :
+            res += (self.sigmoid(np.vdot(center_word, n))) * n
+        return res 
     
     def gradient_context_word (self, center_word, context_word): 
         """ This function is the derived loss function by the vector of the context word
         The arguments should be vectors of words embedding."""
-        raise NotImplementedError('implement it!')
+        res = (self.sigmoid( np.vdot(center_word, context_word) )-1) * center_word
+        return res
     
     def gradient_neg_word (self, center_word, neg_word ) :
         """ This function is the derived loss function by the vector of one negative sampled word
         The arguments should be vectors of words embedding."""
-        raise NotImplementedError('implement it!')
+        res =(self.sigmoid(np.vdot(center_word, neg_word))) * center_word
+        return res 
     
     def sentence2io(self, sentence) :
         """ This function takes as input a sentence, and returns zip of tuples of 2 lists :
@@ -180,8 +185,6 @@ class SkipGram:
             - the second contains the context words of this center word
         """
         raise NotImplementedError('implement it!')
-    
-    
         
 
 if __name__ == '__main__':
