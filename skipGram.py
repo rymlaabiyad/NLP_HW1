@@ -34,8 +34,8 @@ class SkipGram:
         self.negativeRate = negativeRate
         self.winSize = winSize
         self.minCount = minCount
-        self.word2vec_init()
         self.alpha = alpha
+        self.word2vec_init()
         
     def train(self,stepsize, epochs):
         raise NotImplementedError('implement it!')
@@ -122,14 +122,16 @@ class SkipGram:
         sample = np.random.choice(a=np.arange(self.voc_size),size=self.negativeRate, p= self.freq)
         return sample
     
-    def lossFunction(self, v_w, v_c):    
-          v_notc = [self.context2vec[neg_sample] for neg_sample in self.negative_sampling()]
-          notc = sum([np.log(1/(1+np.exp(np.dot(v_w, v)))) for v in v_notc])    
-          return np.log(1/(1+np.exp(-np.dot(v_w, v_c)))) + notc 
-     
     def sigmoid (self, x) :
         res = 1/ (1+ np.exp(-x))
-        return res 
+        return res
+    
+    def lossFunction(self, word, context):   
+        v_word = self.word2vec[word]
+        neg_sample_words = [self.id2context[neg_sample] for neg_sample in self.negative_sampling()]
+        v_neg = [self.context2vec[w] for w in neg_sample_words]
+        neg = sum([np.log(self.sigmoid(-np.dot(v_word, v))) for v in v_neg]) 
+        return np.log(self.sigmoid(np.dot(v_word, self.word2vec[context]))) + neg 
     
     def sentence2io(self, sentence) :
         """ This function takes as input a sentence, and returns zip of tuples of 2 lists :
@@ -152,8 +154,9 @@ if __name__ == '__main__':
     if not opts.test:
         sentences = text2sentences(opts.text)
         sg = SkipGram(sentences)
-        sg.train(...)
-        sg.save(opts.model)
+        print(sg.lossFunction('swimming', 'participating'))
+        '''sg.train(...)
+        sg.save(opts.model)'''
 
     else:
         pairs = loadPairs(opts.text)
@@ -161,5 +164,7 @@ if __name__ == '__main__':
         sg = SkipGram.load(opts.model)
         for a,b,_ in pairs:
             print(sg.similarity(a,b))
+            
+    
 
 
