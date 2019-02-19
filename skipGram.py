@@ -49,7 +49,26 @@ class SkipGram:
         
     def train(self,stepsize = 0.05, epochs = 10):
         for i in range(epochs):
+            loss = 0
             for sent in self.sentences :
+                for tup in self.sentence2io(sent) :
+                    center_word = tup[0]
+                    for context_word in tup[1] : 
+                        v_center_word = self.word2vec[center_word]
+                        v_context_word = self.context2vec[context_word]
+                        negative_sample = self.negative_sampling() 
+                        v_neg = np.array([self.context2vec[n] for n in negative_sample])
+                        
+                        loss += self.loss_function( v_center_word, v_context_word, v_neg)
+                        
+                        self.word2vec[center_word] = v_center_word - stepsize * self.gradient_center_word ( v_center_word, v_context_word, v_neg)
+                        self.context2vec[context_word]  = v_context_word - stepsize * self.gradient_context_word (v_center_word, v_context_word)
+                        
+                        for j, v in enumerate(v_neg) :
+                            self.context2vec[negative_sample[j]]= v - stepsize * self.gradient_neg_word ( v_center_word, v )
+            print("Epoch number" + str(i) + ", the loss is : " + str(loss))
+                        
+                        
                 
             print('Gradient, then backpropagation')
         raise NotImplementedError('implement it!')
@@ -144,25 +163,27 @@ class SkipGram:
         self.freq /= self.freq.sum()
     
     def negative_sampling(self):
-        """ This function returns indexes of words picked following the distribution below :
+        """ This function returns words picked following the distribution below :
             P (word[i]) = frequency(word[i])^alpha / sum of all frequencies raised to the power alpha """
         sample = np.random.choice(a=np.arange(self.voc_size),size=self.negativeRate, p= self.freq)
-        return sample
+        res = [self.id2context[neg_sample] for neg_sample in sample ]
+        return res
     
     def sigmoid (self, x) :
         return 1/ (1+ np.exp(-x))
     
-    def loss_function(self, word, context):
+    def loss_function(self, word, context, negative_sample):
         """This function is the loss function. 
         The arguments are either word or vectors"""
         if(isinstance(word, str)) :
             word = self.word2vec[word]
         if(isinstance(context, str)):
             context = self.word2vec[context]
+        #neg_sample_words = [self.id2context[neg_sample] for neg_sample in self.negative_sampling()]
+        #v_neg = [self.context2vec[w] for w in neg_sample_words]
         
-        neg_sample_words = [self.id2context[neg_sample] for neg_sample in self.negative_sampling()]
-        v_neg = [self.context2vec[w] for w in neg_sample_words]
-        neg = sum([np.log(self.sigmoid(-np.vdot(word, v))) for v in v_neg])
+        
+        neg = sum([np.log(self.sigmoid(-np.vdot(word, v))) for v in negative_sample])
         res = (- np.log(self.sigmoid(np.vdot(word, context))) - neg) 
         return res
     
