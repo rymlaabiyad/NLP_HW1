@@ -122,6 +122,10 @@ class SkipGram:
         sample = np.random.choice(a=np.arange(self.voc_size),size=self.negativeRate, p= self.freq)
         return sample
     
+    def lossFunction(v_w, v_c, v_notc):                                       
+          notc = sum([np.log(1/(1+np.exp(np.dot(v_w, v)))) for v in v_notc])    
+          return np.log(1/(1+np.exp(-np.dot(v_w, v_c)))) + notc 
+    
     def sentence2io(self, sentence) :
         """ This function takes as input a sentence, and returns zip of tuples of 2 lists :
             - the first list contains the center word
