@@ -126,7 +126,7 @@ class SkipGram:
         res = 1/ (1+ np.exp(-x))
         return res
     
-    def lossFunction(self, word, context):   
+    def loss_function(self, word, context):   
         v_word = self.word2vec[word]
         neg_sample_words = [self.id2context[neg_sample] for neg_sample in self.negative_sampling()]
         v_neg = [self.context2vec[w] for w in neg_sample_words]
@@ -154,9 +154,8 @@ if __name__ == '__main__':
     if not opts.test:
         sentences = text2sentences(opts.text)
         sg = SkipGram(sentences)
-        print(sg.lossFunction('swimming', 'participating'))
-        '''sg.train(...)
-        sg.save(opts.model)'''
+        sg.train(...)
+        sg.save(opts.model)
 
     else:
         pairs = loadPairs(opts.text)
