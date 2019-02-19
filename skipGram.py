@@ -113,8 +113,6 @@ class SkipGram:
             self.voc_size +=1
         
         self.freq /= self.freq.sum()
-        
-        return 
     
     def negative_sampling(self):
         """ This function returns indexes of words picked following the distribution below :
@@ -123,8 +121,7 @@ class SkipGram:
         return sample
     
     def sigmoid (self, x) :
-        res = 1/ (1+ np.exp(-x))
-        return res
+        return 1/ (1+ np.exp(-x))
     
     def loss_function(self, word, context):   
         v_word = self.word2vec[word]
