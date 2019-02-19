@@ -148,7 +148,9 @@ class SkipGram:
     def sigmoid (self, x) :
         return 1/ (1+ np.exp(-x))
     
-    def loss_function(self, word, context):   
+    def loss_function(self, word, context):
+        """This function is the loss function. 
+        The arguments are either word or vectors"""
         if(isinstance(word, str)) :
             word = self.word2vec[word]
         if(isinstance(context, str)):
@@ -156,8 +158,9 @@ class SkipGram:
         
         neg_sample_words = [self.id2context[neg_sample] for neg_sample in self.negative_sampling()]
         v_neg = [self.context2vec[w] for w in neg_sample_words]
-        neg = sum([np.log(self.sigmoid(-np.vdot(word, v))) for v in v_neg]) 
-        return np.log(self.sigmoid(np.vdot(word, context))) + neg 
+        neg = sum([np.log(self.sigmoid(-np.vdot(word, v))) for v in v_neg])
+        res = (- np.log(self.sigmoid(np.vdot(word, context))) - neg) 
+        return res
     
     def gradient_center_word (self, center_word, context_word, negative_sample) :
         """ This function is the derived loss function by the vector of the central word 
