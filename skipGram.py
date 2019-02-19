@@ -187,8 +187,18 @@ class SkipGram:
             - the first list contains the center word
             - the second contains the context words of this center word
         """
-        raise NotImplementedError('implement it!')
+        index = 0
+        L = len (sentence.split())
+        res = []
+        for words in sentence.split() :
+            inf = index - self.winSize
+            sup = index + self.winSize + 1
         
+            context = [sentence.split()[i] for i in range(inf, sup) if 0 <= i < L and i != index]
+            index += 1
+            res.append([words, context])
+        return res
+
 
 if __name__ == '__main__':
 
