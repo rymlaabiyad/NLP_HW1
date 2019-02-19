@@ -196,7 +196,7 @@ class SkipGram:
         
             context = [sentence.split()[i] for i in range(inf, sup) if 0 <= i < L and i != index]
             index += 1
-            res.append([words, context])
+            res.append( (words, context) )
         return res
 
 
