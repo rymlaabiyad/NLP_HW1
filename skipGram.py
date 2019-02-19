@@ -220,6 +220,7 @@ class SkipGram:
             
             inf = index - self.winSize
             sup = index + self.winSize + 1
+            context=[]
             context = [sentence[i] for i in range(inf, sup) if 0 <= i < L and i != index]
             
             index += 1
