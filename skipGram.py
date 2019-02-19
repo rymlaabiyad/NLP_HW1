@@ -46,7 +46,7 @@ def loadPairs(path):
 
 
 class SkipGram:
-    def __init__(self,sentences, nEmbed=100, negativeRate=5, winSize = 5, minCount = 5, alpha=3/4):
+    def __init__(self, sentences, nEmbed=100, negativeRate=5, winSize = 5, minCount = 5, alpha=3/4, word2vec = {}):
         self.sentences = sentences
         self.nEmbed= nEmbed
         self.negativeRate = negativeRate
@@ -54,9 +54,11 @@ class SkipGram:
         self.minCount = minCount
         self.alpha = alpha
         self.randomvector = np.random.rand(self.nEmbed)
-        self.word2vec_init()
+        self.word2vec = word2vec
         
     def train(self,stepsize = 0.05, epochs = 10):
+        self.word2vec_init()
+        
         for i in range(epochs):
             loss = 0
             for sent in self.sentences :
@@ -76,6 +78,29 @@ class SkipGram:
                         for j, v in enumerate(v_neg) :
                             self.context2vec[negative_sample[j]]= v - stepsize * self.gradient_neg_word ( v_center_word, v )
             print("Epoch number" + str(i) + ", the loss is : " + str(loss))
+            
+    def train2(self, stepsize = 0.05, epochs = 10):
+        self.word2vec_init()
+        context_dict = self.make_context_dict()
+                    
+        for i in range(epochs):
+            loss = 0
+            
+            for center_word, context in context_dict.items():
+                for context_word in context : 
+                    v_center_word = self.word2vec[center_word]
+                    v_context_word = self.context2vec[context_word]
+                    negative_sample = self.negative_sampling() 
+                    v_neg = np.array([self.context2vec[n] for n in negative_sample])
+                        
+                    loss += self.loss_function( v_center_word, v_context_word, v_neg)
+                        
+                    self.word2vec[center_word] = v_center_word - stepsize * self.gradient_center_word ( v_center_word, v_context_word, v_neg)
+                    self.context2vec[context_word]  = v_context_word - stepsize * self.gradient_context_word (v_center_word, v_context_word)
+                        
+                    for j, v in enumerate(v_neg) :
+                        self.context2vec[negative_sample[j]]= v - stepsize * self.gradient_neg_word ( v_center_word, v )
+            print("Epoch number", str(i), ", the loss is : ", str(loss))
 
     def save(self,path):
         """ This function save the model, i.e : 
@@ -91,7 +116,8 @@ class SkipGram:
             - freq
             - voc_size
         """
-        raise NotImplementedError('implement it!')
+        model = pd.DataFrame.from_dict(data = self.word2vec, orient= 'index')
+        model.to_csv(path)
 
 
     def similarity(self,word1, word2):
@@ -132,7 +158,9 @@ class SkipGram:
             - freq
             - voc_size
             """
-        raise NotImplementedError('implement it!')
+        model = pd.from_csv(path)
+        word2vec = model.to_dict()
+        return SkipGram(word2vec = word2vec)
         
     def word2vec_init(self) :
         """     Creates 4 dictionnaries for sentences:
@@ -173,6 +201,8 @@ class SkipGram:
         res = [self.id2context[neg_sample] for neg_sample in sample ]
         return res
     
+    ### Loss function to minimize ###
+    
     def sigmoid (self, x) :
         return 1/ (1+ np.exp(-x))
     
@@ -187,6 +217,8 @@ class SkipGram:
         neg = sum([np.log(self.sigmoid(-np.vdot(word, v))) for v in negative_sample])
         res = (- np.log(self.sigmoid(np.vdot(word, context))) - neg) 
         return res
+    
+     ### Optimization functions ###
     
     def gradient_center_word (self, center_word, context_word, negative_sample) :
         """ This function is the derived loss function by the vector of the central word 
@@ -208,6 +240,8 @@ class SkipGram:
         res =(self.sigmoid(np.vdot(center_word, neg_word))) * center_word
         return res 
     
+    ### Context related functions ### 
+    
     def sentence2io(self, sentence) :
         """ This function takes as input a sentence, and returns list of tuples :
             - the first element is the center word
@@ -225,6 +259,20 @@ class SkipGram:
             index += 1
             res.append( (words, context) )
         return res
+    
+    def make_context_dict(self):
+        ''' This function creates a dictionary containing all the worlds of the vocabulary
+            as keys, and their context as an array, as value 
+        '''
+        context_dict = {}
+        for sent in self.sentences:
+            for s in self.sentence2io(sent):
+                if s[0] in context_dict.keys():
+                    for e in s[1]:
+                        context_dict[s[0]].append(e)
+                else:
+                    context_dict[s[0]] = s[1]
+        return context_dict
 
 
 if __name__ == '__main__':
@@ -239,8 +287,9 @@ if __name__ == '__main__':
     if not opts.test:
         sentences = text2sentences_without_punctuation(opts.text)
         sg = SkipGram(sentences)
-        sg.train()
-        #sg.save(opts.model)
+        
+        sg.train2()
+        sg.save(opts.model)
 
     else:
         pairs = loadPairs(opts.text)
