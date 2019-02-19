@@ -4,6 +4,8 @@ import pandas as pd
 
 # useful stuff
 import numpy as np
+from sklearn.preprocessing import OneHotEncoder
+
 from scipy.special import expit
 from sklearn.preprocessing import normalize
 
@@ -51,6 +53,10 @@ class SkipGram:
     @staticmethod
     def load(path):
         raise NotImplementedError('implement it!')
+        
+    def lossFunction(v_w, v_c, v_notc):
+        notc = sum([np.log(1/(1+np.exp(np.dot(v_w, v)))) for v in v_notc])
+        return np.log(1/(1+np.exp(-np.dot(v_w, v_c)))) + notc
 
 if __name__ == '__main__':
 
