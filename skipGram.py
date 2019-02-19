@@ -66,14 +66,29 @@ class SkipGram:
         """
         raise NotImplementedError('implement it!')
 
-    def similarity(self,word1,word2):
+
+    def similarity(self,word1, word2):
         """
             computes similiarity between the two words. unknown words are mapped to one common vector
         :param word1:
         :param word2:
         :return: a float \in [0,1] indicating the similarity (the higher the more similar)
         """
-        raise NotImplementedError('implement it!')
+        test = ( word2 in self.word2vec.keys() )
+        if word1 in self.word2vec.keys() :
+            if test == 1 :
+                similarity = np.dot(self.word2vec[word1],self.word2vec[word2]) /  ( np.linalg.norm(self.word2vec[word1]) * np.linalg.norm(self.word2vec[word2]) )
+            else : 
+                word2 = self.randomvector
+                similarity = np.dot(self.word2vec[word1],word2) /  ( np.linalg.norm(self.word2vec[word1]) * np.linalg.norm(word2) )
+        else :
+            word1 = self.randomvector
+            if test == 1 :
+                similarity = np.dot(word1,self.word2vec[word2]) /  ( np.linalg.norm(word1) * np.linalg.norm(self.word2vec[word2]) )
+            else : 
+                word2 = self.randomvector
+                similarity = np.dot(word1,word2) /  ( np.linalg.norm(word1) * np.linalg.norm(word2) )
+        return similarity
 
     @staticmethod
     def load(path):
