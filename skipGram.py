@@ -44,6 +44,7 @@ class SkipGram:
         self.winSize = winSize
         self.minCount = minCount
         self.alpha = alpha
+        self.randomvector = np.random.rand(self.nEmbed)
         self.word2vec_init()
         
     def train(self,stepsize = 0.05, epochs = 10):
