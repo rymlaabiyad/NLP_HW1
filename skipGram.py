@@ -122,7 +122,8 @@ class SkipGram:
         sample = np.random.choice(a=np.arange(self.voc_size),size=self.negativeRate, p= self.freq)
         return sample
     
-    def lossFunction(v_w, v_c, v_notc):                                       
+    def lossFunction(self, v_w, v_c):    
+          v_notc = [self.context2vec[neg_sample] for neg_sample in self.negative_sampling()]
           notc = sum([np.log(1/(1+np.exp(np.dot(v_w, v)))) for v in v_notc])    
           return np.log(1/(1+np.exp(-np.dot(v_w, v_c)))) + notc 
      
