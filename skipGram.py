@@ -43,8 +43,8 @@ class SkipGram:
         self.negativeRate = negativeRate
         self.winSize = winSize
         self.minCount = minCount
-        self.word2vec_init()
         self.alpha = alpha
+        self.word2vec_init()
         
     def train(self,stepsize, epochs):
         raise NotImplementedError('implement it!')
@@ -122,8 +122,6 @@ class SkipGram:
             self.voc_size +=1
         
         self.freq /= self.freq.sum()
-        
-        return 
     
     def negative_sampling(self):
         """ This function returns indexes of words picked following the distribution below :
@@ -131,14 +129,15 @@ class SkipGram:
         sample = np.random.choice(a=np.arange(self.voc_size),size=self.negativeRate, p= self.freq)
         return sample
     
-    def lossFunction(self, v_w, v_c):    
-          v_notc = [self.context2vec[neg_sample] for neg_sample in self.negative_sampling()]
-          notc = sum([np.log(1/(1+np.exp(np.dot(v_w, v)))) for v in v_notc])    
-          return np.log(1/(1+np.exp(-np.dot(v_w, v_c)))) + notc 
-     
     def sigmoid (self, x) :
-        res = 1/ (1+ np.exp(-x))
-        return res 
+        return 1/ (1+ np.exp(-x))
+    
+    def loss_function(self, word, context):   
+        v_word = self.word2vec[word]
+        neg_sample_words = [self.id2context[neg_sample] for neg_sample in self.negative_sampling()]
+        v_neg = [self.context2vec[w] for w in neg_sample_words]
+        neg = sum([np.log(self.sigmoid(-np.dot(v_word, v))) for v in v_neg]) 
+        return np.log(self.sigmoid(np.dot(v_word, self.word2vec[context]))) + neg 
     
     def gradient_center_word (self, center_word, context_word, negative_sample) :
         """ This function is the derived loss function by the vector of the central word 
@@ -183,8 +182,10 @@ if __name__ == '__main__':
     else:
         pairs = loadPairs(opts.text)
 
-        sg = mSkipGram.load(opts.model)
+        sg = SkipGram.load(opts.model)
         for a,b,_ in pairs:
             print(sg.similarity(a,b))
+            
+    
 
 
