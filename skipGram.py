@@ -46,8 +46,9 @@ class SkipGram:
         self.alpha = alpha
         self.word2vec_init()
         
-    def train(self,stepsize, epochs):
-        raise NotImplementedError('implement it!')
+    def train(self,stepsize = 0.05, epochs = 10):
+        for i in range(epochs):
+            print('Gradient, then backpropagation')
 
     def save(self,path):
         """ This function save the model, i.e : 
