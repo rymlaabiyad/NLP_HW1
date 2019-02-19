@@ -125,12 +125,18 @@ class SkipGram:
     def lossFunction(v_w, v_c, v_notc):                                       
           notc = sum([np.log(1/(1+np.exp(np.dot(v_w, v)))) for v in v_notc])    
           return np.log(1/(1+np.exp(-np.dot(v_w, v_c)))) + notc 
+     
+    def sigmoid (self, x) :
+        res = 1/ (1+ np.exp(-x))
+        return res 
     
     def sentence2io(self, sentence) :
         """ This function takes as input a sentence, and returns zip of tuples of 2 lists :
             - the first list contains the center word
             - the second contains the context words of this center word
         """
+        raise NotImplementedError('implement it!')
+        
         
 
 if __name__ == '__main__':
