@@ -49,7 +49,10 @@ class SkipGram:
         
     def train(self,stepsize = 0.05, epochs = 10):
         for i in range(epochs):
+            for sent in self.sentences :
+                
             print('Gradient, then backpropagation')
+        raise NotImplementedError('implement it!')
 
     def save(self,path):
         """ This function save the model, i.e : 
@@ -184,18 +187,19 @@ class SkipGram:
         return res 
     
     def sentence2io(self, sentence) :
-        """ This function takes as input a sentence, and returns zip of tuples of 2 lists :
-            - the first list contains the center word
-            - the second contains the context words of this center word
+        """ This function takes as input a sentence, and returns list of tuples :
+            - the first element is the center word
+            - the second is a list of context words
         """
         index = 0
-        L = len (sentence.split())
+        L = len (sentence)
         res = []
-        for words in sentence.split() :
+        for words in sentence :
+            
             inf = index - self.winSize
             sup = index + self.winSize + 1
-        
-            context = [sentence.split()[i] for i in range(inf, sup) if 0 <= i < L and i != index]
+            context = [sentence[i] for i in range(inf, sup) if 0 <= i < L and i != index]
+            
             index += 1
             res.append( (words, context) )
         return res
