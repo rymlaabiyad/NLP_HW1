@@ -96,7 +96,7 @@ class SkipGram:
         self.word2vec_initV2()
         print("The corpus has " + str(self.voc_size) + " different words")
         self.wordcount_and_sentences2id()
-        print("The corpus has" + str(self.sentences_id.shape[0]) + "sentences")
+        print("The corpus has " + str(self.sentences_id.shape[0]) + " sentences")
         
         
         for i in range(epochs):
@@ -350,7 +350,7 @@ class SkipGram:
             - the first element is the center word
             - the second is a list of context words
         """
-        L = len (sentence)
+        L = sentence.shape[0]
         res = []
         for index,word in enumerate(sentence):
             if self.word_count[word] > self.minCount :
@@ -407,5 +407,3 @@ sentences = text2sentences_without_punctuation(training_data_path)
 
 sg = SkipGram(sentences, nEmbed=100, negativeRate=5, winSize = 3)
 sg.trainV2()
-
-
