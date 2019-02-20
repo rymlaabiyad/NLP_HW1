@@ -91,6 +91,38 @@ class SkipGram:
                             self.context2vec[negative_sample[j]]= v - stepsize * self.gradient_neg_word ( v_center_word, v )
                 if (count_sentences % 1000 ==0 ): print(str(count_sentences) + " sentences proceeded")
             print("Epoch number" + str(i) + ", the loss is : " + str(loss))
+    
+    def trainV2(self,stepsize = 0.05, epochs = 10):
+        self.word2vec_initV2()
+        print("The corpus has " + str(self.voc_size) + " different words")
+        self.wordcount_and_sentences2id()
+        print("The corpus has" + str(self.sentences_id.shape[0]) + "sentences")
+        
+        
+        for i in range(epochs):
+            print("Epoch n : "+str(i))
+            count_sentences = 0 
+            loss = 0
+            for sent in self.sentences_id :
+                count_sentences +=1
+                for tup in self.sentence2io(sent) :
+                    center_word = tup[0]
+                    for context_word in tup[1] : 
+                        v_center_word = self.id2center_vec[center_word]
+                        v_context_word = self.id2context_vec[context_word]
+                        negative_sample = self.negative_sampling() 
+                        v_neg = np.array([self.id2context_vec[n] for n in negative_sample])
+                        
+                        loss += self.loss_function( v_center_word, v_context_word, v_neg)
+                        
+                        self.id2center_vec[center_word] = v_center_word - stepsize * self.gradient_center_word ( v_center_word, v_context_word, v_neg)
+                        self.id2context_vec[context_word]  = v_context_word - stepsize * self.gradient_context_word (v_center_word, v_context_word)
+                        
+                        for j, v in enumerate(v_neg) :
+                            self.id2context_vec[negative_sample[j]]= v - stepsize * self.gradient_neg_word ( v_center_word, v )
+                if (count_sentences % 1000 ==0 ): print(str(count_sentences) + " sentences proceeded")
+            print("Epoch number" + str(i) + ", the loss is : " + str(loss))
+            
             
     def train2(self, stepsize = 0.05, epochs = 10):
         self.word2vec_init()
@@ -206,12 +238,71 @@ class SkipGram:
         
         self.freq /= self.freq.sum()
     
+    def word2vec_initV2(self) :
+        """     Creates 4 dictionnaries for sentences:
+            word2vec : for each word, creates a random uniform array of size nEmbed
+            word_count : counts the number of occurrences of each word
+            context2vec : for each word, creates a random uniform array of size nEmbed
+            id2context : assign an id as key for each for each word
+                It also creates a list of frequencies, where the frequencies are the nb of occurrence 
+                of a word raised to the power of alpha, divided by the sum of all those weights"""
+        self.word2id = {}
+        self.id2center_vec =np.array([])
+        
+        self.context2id = {}
+        self.id2context_vec=np.array([])
+        
+        self.voc_size=0 
+        
+        for sent in self.sentences :
+            for word in sent :
+                
+                if word not in self.word2id.keys() :
+                    
+                    self.word2id[word] = self.voc_size
+                    self.id2center_vec = np.append(self.id2center_vec,np.random.rand(self.nEmbed))
+                    
+                    self.context2id[word] = self.voc_size
+                    self.id2context_vec = np.append(self.id2context_vec,np.random.rand(self.nEmbed))
+                    
+                    self.voc_size +=1
+        
+        pass
+                    
+    def wordcount_and_sentences2id (self) :
+        """ This function creates 3 new objects variables :
+            - word_count : an np.array where the indexes are the values of word2id, and the values are the nb of times this word appears in the corpus
+            - freq : the word_count raised to the power self.alpha, and then divided by the sum to have a frequencies
+            - sentences_id : we create a new list from sentences, where we replace each word by its id in word2id dictionnary
+             """
+        self.word_count = np.zeros(self.voc_size)
+        self.sentences_id = np.array([])
+        
+        for sent in self.sentences :
+            sent_id=np.array([])
+            for word in sent :
+                
+                word_id = self.word2id[word]
+                
+                self.word_count[ word_id ] +=1
+                sent_id = np.append(sent_id , word_id)
+                
+            self.sentences_id = np.append(self.sentences_id, sent_id) 
+        
+        temp = np.power(self.word_count, self.alpha)
+        self.freq = temp / temp.sum()
+        del temp
+        
+        del self.sentences
+        pass
+    
     def negative_sampling(self):
         """ This function returns words picked following the distribution below :
             P (word[i]) = frequency(word[i])^alpha / sum of all frequencies raised to the power alpha """
         sample = np.random.choice(a=np.arange(self.voc_size),size=self.negativeRate, p= self.freq)
-        res = [self.id2context[neg_sample] for neg_sample in sample ]
-        return res
+        #res = [self.id2context[neg_sample] for neg_sample in sample ]
+        #return res
+        return sample
     
     ### Loss function to minimize ###
     
@@ -253,25 +344,23 @@ class SkipGram:
         return res 
     
     ### Context related functions ### 
-    
+        
     def sentence2io(self, sentence) :
         """ This function takes as input a sentence, and returns list of tuples :
             - the first element is the center word
             - the second is a list of context words
         """
-        index = 0
         L = len (sentence)
         res = []
-        for words in sentence :
-            if self.word_count(words) > self.minCount :
+        for index,word in enumerate(sentence):
+            if self.word_count[word] > self.minCount :
                 inf = index - self.winSize
                 sup = index + self.winSize + 1
                 context = []
                     
                 context = [sentence[i] for i in range(inf, sup) if 0 <= i < L and i != index]
             
-                index += 1
-                res.append( (words, context) )
+                res.append( (word, context) )
         return res
     
     def make_context_dict(self):
@@ -317,6 +406,6 @@ training_data_path = '/Users/alimrabeth/Desktop/Master Data Sciences & Business 
 sentences = text2sentences_without_punctuation(training_data_path)
 
 sg = SkipGram(sentences, nEmbed=100, negativeRate=5, winSize = 3)
-sg.train()
+sg.trainV2()
 
 
