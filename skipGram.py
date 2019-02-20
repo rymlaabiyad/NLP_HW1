@@ -96,8 +96,7 @@ class SkipGram:
         self.word2vec_initV2()
         print("The corpus has " + str(self.voc_size) + " different words")
         self.wordcount_and_sentences2id()
-        print("The corpus has " + str(self.sentences_id.shape[0]) + " sentences")
-        
+        print("The corpus has " + str(len(self.sentences_id)) + " sentences")
         
         for i in range(epochs):
             print("Epoch n : "+str(i))
@@ -121,7 +120,7 @@ class SkipGram:
                         for j, v in enumerate(v_neg) :
                             self.id2context_vec[negative_sample[j]]= v - stepsize * self.gradient_neg_word ( v_center_word, v )
                 if (count_sentences % 1000 ==0 ): print(str(count_sentences) + " sentences proceeded")
-            print("Epoch number" + str(i) + ", the loss is : " + str(loss))
+            print("Epoch number " + str(i) + ", the loss is : " + str(loss))
             
             
     def train2(self, stepsize = 0.05, epochs = 10):
@@ -276,18 +275,18 @@ class SkipGram:
             - sentences_id : we create a new list from sentences, where we replace each word by its id in word2id dictionnary
              """
         self.word_count = np.zeros(self.voc_size)
-        self.sentences_id = np.array([])
+        self.sentences_id = []
         
         for sent in self.sentences :
-            sent_id=np.array([])
+            sent_id=[]
             for word in sent :
                 
                 word_id = self.word2id[word]
                 
                 self.word_count[ word_id ] +=1
-                sent_id = np.append(sent_id , word_id)
+                sent_id.append(word_id)
                 
-            self.sentences_id = np.append(self.sentences_id, sent_id) 
+            self.sentences_id.append(sent_id) 
         
         temp = np.power(self.word_count, self.alpha)
         self.freq = temp / temp.sum()
@@ -350,7 +349,7 @@ class SkipGram:
             - the first element is the center word
             - the second is a list of context words
         """
-        L = sentence.shape[0]
+        L = len(sentence)
         res = []
         for index,word in enumerate(sentence):
             if self.word_count[word] > self.minCount :
@@ -402,7 +401,7 @@ class SkipGram:
             print(sg.similarity(a,b))
 """
 
-training_data_path = '/Users/alimrabeth/Desktop/Master Data Sciences & Business Analytics/Data Sciences Elective courses/NLP/Projet 1/sentences.txt'
+training_data_path = '/Users/alimrabeth/Desktop/Master Data Sciences & Business Analytics/Data Sciences Elective courses/NLP/Projet 1/sentences _test.txt'
 sentences = text2sentences_without_punctuation(training_data_path)
 
 sg = SkipGram(sentences, nEmbed=100, negativeRate=5, winSize = 3)
