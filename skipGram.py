@@ -67,10 +67,13 @@ class SkipGram:
         
     def train(self,stepsize = 0.05, epochs = 10):
         self.word2vec_init()
+        print("The corpus has " + str(self.voc_size) + " different words")
         
+        count_sentences = 0 
         for i in range(epochs):
             loss = 0
             for sent in self.sentences :
+                count_sentences +=1
                 for tup in self.sentence2io(sent) :
                     center_word = tup[0]
                     for context_word in tup[1] : 
@@ -86,6 +89,7 @@ class SkipGram:
                         
                         for j, v in enumerate(v_neg) :
                             self.context2vec[negative_sample[j]]= v - stepsize * self.gradient_neg_word ( v_center_word, v )
+                if (count_sentences % 1000 ==0 ): print(str(count_sentences) + " sentences proceeded")
             print("Epoch number" + str(i) + ", the loss is : " + str(loss))
             
     def train2(self, stepsize = 0.05, epochs = 10):
@@ -129,7 +133,7 @@ class SkipGram:
         model.to_csv(path, index = False)
 
     @staticmethod
-    def load(path):
+    def load(self, path):
         """ This function loads the model, i.e :
             - nEmbed
             - negativeRate,
@@ -144,8 +148,8 @@ class SkipGram:
             - voc_size
             """
         model = pd.read_csv(path)
-        word2vec = model.to_dict(orient='list')
-        return SkipGram(word2vec = word2vec)
+        self.word2vec = model.to_dict(orient='list')
+        pass
     
     def similarity(self,word1, word2):
         """
@@ -259,14 +263,15 @@ class SkipGram:
         L = len (sentence)
         res = []
         for words in sentence :
+            if self.word_count(words) > self.minCount :
+                inf = index - self.winSize
+                sup = index + self.winSize + 1
+                context = []
+                    
+                context = [sentence[i] for i in range(inf, sup) if 0 <= i < L and i != index]
             
-            inf = index - self.winSize
-            sup = index + self.winSize + 1
-            context = []
-            context = [sentence[i] for i in range(inf, sup) if 0 <= i < L and i != index]
-            
-            index += 1
-            res.append( (words, context) )
+                index += 1
+                res.append( (words, context) )
         return res
     
     def make_context_dict(self):
@@ -284,7 +289,7 @@ class SkipGram:
         return context_dict
 
 
-if __name__ == '__main__':
+"""if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--text', help='path containing training data', required=True)
@@ -306,5 +311,12 @@ if __name__ == '__main__':
         sg = SkipGram.load(opts.model)
         for a,b,_ in pairs:
             print(sg.similarity(a,b))
+"""
+
+training_data_path = '/Users/alimrabeth/Desktop/Master Data Sciences & Business Analytics/Data Sciences Elective courses/NLP/Projet 1/sentences.txt'
+sentences = text2sentences_without_punctuation(training_data_path)
+
+sg = SkipGram(sentences, nEmbed=100, negativeRate=5, winSize = 3)
+sg.train()
 
 
