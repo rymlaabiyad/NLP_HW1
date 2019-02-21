@@ -95,14 +95,13 @@ class SkipGram:
     def trainV2(self,stepsize = 0.05, epochs = 10):
         self.word2vec_initV2()
         print("The corpus has " + str(self.voc_size) + " different words")
-        self.wordcount_and_sentences2id()
-        print("The corpus has " + str(len(self.sentences_id)) + " sentences")
+        print("The corpus has " + str(len(self.sentences)) + " sentences")
         
         for i in range(epochs):
             print("Epoch n : "+str(i))
             count_sentences = 0 
             loss = 0
-            for sent in self.sentences_id :
+            for sent in self.sentences :
                 count_sentences +=1
                 for tup in self.sentence2io(sent) :
                     center_word = tup[0]
@@ -253,8 +252,11 @@ class SkipGram:
         
         self.voc_size=0 
         
-        for sent in self.sentences :
-            for word in sent :
+        self.word_count = np.array([])
+        
+        for n_sent,sent in enumerate(self.sentences) :
+            
+            for n_word, word in enumerate(sent) :
                 
                 if word not in self.word2id.keys() :
                     
@@ -264,7 +266,23 @@ class SkipGram:
                     self.context2id[word] = self.voc_size
                     self.id2context_vec = np.append(self.id2context_vec,np.random.rand(self.nEmbed))
                     
+                    word_id = self.voc_size
+                    
+                    self.word_count = np.append(self.word_count, 1)
+                    
                     self.voc_size +=1
+                    
+                else :
+                    word_id = self.word2id[word]
+                    
+                    self.word_count[ word_id ] +=1
+                    
+                
+                sentences[n_sent][n_word] = word_id
+                
+        temp = np.power(self.word_count, self.alpha)
+        self.freq = temp / temp.sum()
+        del temp
         
         pass
                     
@@ -401,7 +419,7 @@ class SkipGram:
             print(sg.similarity(a,b))
 """
 
-training_data_path = '/Users/alimrabeth/Desktop/Master Data Sciences & Business Analytics/Data Sciences Elective courses/NLP/Projet 1/sentences _test.txt'
+training_data_path = '/Users/alimrabeth/Desktop/Master Data Sciences & Business Analytics/Data Sciences Elective courses/NLP/Projet 1/sentences.txt'
 sentences = text2sentences_without_punctuation(training_data_path)
 
 sg = SkipGram(sentences, nEmbed=100, negativeRate=5, winSize = 3)
