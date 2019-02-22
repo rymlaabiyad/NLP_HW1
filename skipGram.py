@@ -50,6 +50,11 @@ class SkipGram:
         self.randomvector = np.random.rand(self.nEmbed)
         self.word2vec = word2vec
         
+    '''This method initialises :
+        - word2id : a dictionary {word : id} that only keeps word found at least minCount times
+        - center_vec : An array containing the embedding for each center word in word2id
+        - context_vec : An array containing the embedding for each context word in word2id
+    '''
     def word2vec_init(self) :     
         '''Count the words in the corpus, and only keep those
             that show up more than minCount times
@@ -95,10 +100,52 @@ class SkipGram:
         '''This part of the code is only useful if we want a negative sampling based on word count'''
         temp = np.power(self.freq, self.alpha)
         self.freq = temp / temp.sum()          
+        
+    ### Context related methods ### 
+        
+    def sentence2io(self, sentence) :
+        """ This method takes as input a sentence, and returns list of tuples :
+            - the first element is the center word
+            - the second is a list of context words
+        """
+        L = len(sentence)
+        res = []
+        for index, word in enumerate(sentence):
+            inf = index - self.winSize
+            sup = index + self.winSize + 1
+            
+            context = [sentence[i] for i in range(inf, 
+                           sup) if 0 <= i < L and i != index]
+            res.append((word, context))
+        return res
+        
+    def make_context_dict(self):
+        ''' This method creates a dictionary containing all the worlds of the (reduced) vocabulary
+            as keys, and their context as an array, as value.
+            If a word is found more than once in the context of a center word,
+            it's only appended once.
+        '''
+        print('Making a dictionary : {word_id : [context_id]}')
+        context_dict = {}
+        for sent in self.id_sentences:
+            for s in self.sentence2io(sent):
+                if s[0] in context_dict.keys():
+                    for e in s[1]:
+                        if e not in context_dict[s[0]] :
+                            context_dict[s[0]].append(e)
+                else:
+                    context_dict[s[0]] = s[1]
+        return context_dict
+    
+    ### TRAINING METHOD ###
 
     def train(self, stepsize = 0.02, epochs = 10):
         self.word2vec_init()
         context_dict = self.make_context_dict()
+        
+        ''' These two variables will be useful to check whether our loss is still decreasing.
+            If it starts increasing, we will make an early stop.
+        '''
         old_loss = np.inf
         old_loss2 = np.inf
 
@@ -156,7 +203,6 @@ class SkipGram:
                     old_loss2 = old_loss
                     old_loss = loss
 
-
     def save(self,path):
         """ This method saves the model, i.e : 
             - word2id dictionnary
@@ -198,50 +244,18 @@ class SkipGram:
             v_word2 = self.randomvector 
             
         similarity = np.dot(v_word1, v_word2) / (np.linalg.norm(v_word1) * np.linalg.norm(v_word2))
+        ''' The similarity returned lies between -1 and 1, so we need to transform it '''
         return (similarity + 1)/2
+        
     
-    ### Context related methods ### 
-        
-    def sentence2io(self, sentence) :
-        """ This method takes as input a sentence, and returns list of tuples :
-            - the first element is the center word
-            - the second is a list of context words
-        """
-        L = len(sentence)
-        res = []
-        for index, word in enumerate(sentence):
-            inf = index - self.winSize
-            sup = index + self.winSize + 1
-            
-            context = [sentence[i] for i in range(inf, 
-                           sup) if 0 <= i < L and i != index]
-            res.append((word, context))
-        return res
-        
-    def make_context_dict(self):
-        ''' This method creates a dictionary containing all the worlds of the (reduced) vocabulary
-            as keys, and their context as an array, as value.
-            If a word is found more than once in the context of a center word,
-            it's only appended once.
-        '''
-        print('Making a dictionary : {word_id : [context_id]}')
-        context_dict = {}
-        for sent in self.id_sentences:
-            for s in self.sentence2io(sent):
-                if s[0] in context_dict.keys():
-                    for e in s[1]:
-                        if e not in context_dict[s[0]] :
-                            context_dict[s[0]].append(e)
-                else:
-                    context_dict[s[0]] = s[1]
-        return context_dict
-        
     def negative_sampling_rand(self):
         return np.random.randint(low = 0, high = len(self.word2id), size = self.negativeRate)
     
     def negative_sampling(self):
         """ This method returns words picked following the distribution below :
-            P (word[i]) = frequency(word[i])^alpha / sum of all frequencies raised to the power alpha """
+            P (word[i]) = frequency(word[i])^alpha / sum of all frequencies raised to the power alpha. 
+            It's slower than the random negative sampling.
+        """
         return np.random.choice(a = np.arange(len(self.word2id)), size = self.negativeRate, p = self.freq)
     
     ### Loss function to minimize ###
