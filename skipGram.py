@@ -22,25 +22,19 @@ def text2sentences(path):
         and returns a list of lists. 
         Each element of the main list is a sentence, made of a list of words.
     '''
-    t1 = datetime.datetime.now()
-    print('Reading sentences ...')
-    
     sentences = []
-    count = 0
     nlp = spacy.load('en')
     tokenizer = Tokenizer(nlp.vocab)
     with open(path) as f:
         for l in f:
-            sentences.append([str(t) for t in tokenizer(l) if (t.is_punct == False and (str(t) == '\n') == False)])
-            count += 1
-            if count == 10000:
-                break
-    print(len(sentences), 'sentences read in', datetime.datetime.now() - t1)
+            sentences.append([str(t) for t in tokenizer(l) if t.is_punct == False and (str(t) == '\n') == False and t.is_digit == False])
+
+    print(len(sentences), 'sentences read')
     return sentences
 
 def loadPairs(path):
     data = pd.read_csv(path, delimiter='\t')
-    pairs = zip(data['word1'],data['word2'],data['similarity'])
+    pairs = zip(data['word1'], data['word2'], data['similarity'])
     return pairs
 
 class SkipGram:
@@ -57,8 +51,6 @@ class SkipGram:
         self.word2vec = word2vec
         
     def word2vec_init(self) :     
-        print('Initializing word embeddings ...')
-        
         '''Count the words in the corpus, and only keep those
             that show up more than minCount times
         '''
@@ -83,19 +75,21 @@ class SkipGram:
             an embedding as both a center word and a context word
         '''
         self.id_sentences = []
+        self.freq = np.zeros(len(self.word2id)) 
         for sent in self.sentences :
             s = []
             for word in sent : 
                 if word in self.word2id.keys() :
-                    s.append(self.word2id[word])
+                    word_id = self.word2id[word]
+                    s.append(word_id)
+                    self.freq[word_id] += 1
             self.id_sentences.append(s)
             
         self.center_vec = np.random.rand(len(self.word2id), self.nEmbed)
         self.context_vec= np.random.rand(len(self.word2id), self.nEmbed)
         
-        self.freq =np.array([])
-        '''I need something about frequency here ... '''
-          
+        temp = np.power(self.freq, self.alpha)
+        self.freq = temp / temp.sum()          
 
     def train(self, stepsize = 0.02, epochs = 10):
         self.word2vec_init()
@@ -222,8 +216,6 @@ class SkipGram:
             If a word is found more than once in the context of a center word,
             it's only appended once.
         '''
-        t1 = datetime.datetime.now()
-        print('Making a dictionary {word_id : [context_id]} ...')
         context_dict = {}
         for sent in self.id_sentences:
             for s in self.sentence2io(sent):
@@ -233,8 +225,6 @@ class SkipGram:
                             context_dict[s[0]].append(e)
                 else:
                     context_dict[s[0]] = s[1]
-        
-        print('Context_dict done in', datetime.datetime.now() - t1)
         return context_dict
         
     def negative_sampling_rand(self):
