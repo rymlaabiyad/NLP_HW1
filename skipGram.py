@@ -18,7 +18,7 @@ __emails__  = ['ali.mrabeth@essec.edu','rym.laabiyad@essec.edu','amine.sentissi@
 
 def text2sentences(path):
     '''This method retrieves the entire training text, 
-        removes punctuation and line breaks,
+        removes punctuation, line breaks and digits,
         and returns a list of lists. 
         Each element of the main list is a sentence, made of a list of words.
     '''
@@ -61,7 +61,8 @@ class SkipGram:
         for sent in self.sentences :
             for word in sent :
                 if word in self.word_count.keys():
-                    if self.word_count[word] > self.minCount and word not in self.word2id.keys() :
+                    ''' Only add a word to word2id if it shows up at least minCount times'''
+                    if self.word_count[word] >= self.minCount and word not in self.word2id.keys() :
                         self.word2id[word] = i
                         i += 1
                     else :
@@ -71,8 +72,8 @@ class SkipGram:
         print('Initial vocabulary size :', len(self.word_count), 
               ', Reduced size :', len(self.word2id))
             
-        '''Give the reduced vocabulary (words that show up more than minCount times)
-            an embedding as both a center word and a context word
+        '''Transform the sentences array (list of words) into a list of word IDs,
+            but only keep words that appear at least minCount times (which are the words found in word2id)
         '''
         self.id_sentences = []
         self.freq = np.zeros(len(self.word2id)) 
@@ -85,9 +86,13 @@ class SkipGram:
                     self.freq[word_id] += 1
             self.id_sentences.append(s)
             
+        '''Give the reduced vocabulary (words that show up more than minCount times)
+            an embedding as both a center word and a context word
+        '''
         self.center_vec = np.random.rand(len(self.word2id), self.nEmbed)
         self.context_vec= np.random.rand(len(self.word2id), self.nEmbed)
         
+        '''This part of the code is only useful if we want a negative sampling based on word count'''
         temp = np.power(self.freq, self.alpha)
         self.freq = temp / temp.sum()          
 
@@ -219,6 +224,7 @@ class SkipGram:
             If a word is found more than once in the context of a center word,
             it's only appended once.
         '''
+        print('Making a dictionary : {word_id : [context_id]}')
         context_dict = {}
         for sent in self.id_sentences:
             for s in self.sentence2io(sent):
