@@ -100,7 +100,7 @@ class SkipGram:
     def train(self, stepsize = 0.02, epochs = 10):
         self.word2vec_init()
         context_dict = self.make_context_dict()
-                    
+        old_loss = np.inf
 
         for i in range(epochs):
             t1 = datetime.datetime.now()
@@ -148,6 +148,11 @@ class SkipGram:
             else :
                 print("For epoch number", str(i+1), ", the loss is : ", str(loss))
                 print('Time spent :', datetime.datetime.now() - t1)
+                if loss >= old_loss :
+                    print('Early stopping due to an increase in loss.')
+                    break
+                else :
+                    old_loss = loss
 
 
     def save(self,path):
@@ -290,7 +295,7 @@ if __name__ == '__main__':
         sentences = text2sentences(opts.text)
         
         sg = SkipGram(sentences)
-        sg.train(stepsize = 0.05, epochs = 5)
+        sg.train(stepsize = 0.02, epochs = 5)
         sg.save(opts.model)
 
     else:
